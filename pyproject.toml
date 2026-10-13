@@ -73,5 +73,6 @@ dev = [
     "langgraph-cli[inmem]>=0.4.7",
     "mypy>=1.13.0",
     "pytest>=8.3.5",
+    "pytest-asyncio>=1.4.0",
     "ruff>=0.8.2",
 ]
