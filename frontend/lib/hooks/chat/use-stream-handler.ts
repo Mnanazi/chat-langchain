@@ -869,8 +869,12 @@ export function useStreamHandler({
       )
     })
 
-    // Fetch usage metadata and generate public share link if we have a runId
-    if (runId) {
+    // Fetch usage metadata and generate public share link if we have a runId.
+    // These read the run back from the LangSmith cloud API via the MDA connector.
+    // When no LangSmith key with read permission is configured (e.g. local dev on
+    // Bailian), they return 403 and only pollute the console, so gate them behind
+    // NEXT_PUBLIC_ENABLE_TRACE_VIEWER=true. Chat itself is unaffected either way.
+    if (runId && process.env.NEXT_PUBLIC_ENABLE_TRACE_VIEWER === "true") {
       fetchUsageMetadata(runId, assistantMessageId)
       generateShareLink(runId, assistantMessageId)
     }

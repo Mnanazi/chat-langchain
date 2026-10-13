@@ -8,12 +8,12 @@ from typing import Any, Literal
 
 import langsmith as ls
 from langchain.agents.middleware import AgentMiddleware, AgentState, hook_config
-from langchain.chat_models import init_chat_model
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langgraph.runtime import Runtime
 from langsmith import Client
 from typing_extensions import NotRequired, TypedDict
 
+from src.agent.llm import get_chat_model
 from src.prompts.guardrails_prompts import (
     fallback_rejection_message as _FALLBACK_REJECTION_MESSAGE,
 )
@@ -120,11 +120,11 @@ class GuardrailsMiddleware(AgentMiddleware[GuardrailsState]):
 
             fallback_model = DEFAULT_MODEL.id
 
-        self.llm = init_chat_model(model=model, temperature=0)
+        self.llm = get_chat_model(model, temperature=0)
         self.classifier_llms = [(model, self.llm)]
         if fallback_model != model:
             self.classifier_llms.append(
-                (fallback_model, init_chat_model(model=fallback_model, temperature=0))
+                (fallback_model, get_chat_model(fallback_model, temperature=0))
             )
         self.block_off_topic = block_off_topic
         logger.info(

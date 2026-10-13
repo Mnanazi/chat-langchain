@@ -34,6 +34,10 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
 packages = ["langgraph.templates.agent", "agent"]
+
+[[tool.uv.index]]
+url = "https://pypi.tuna.tsinghua.edu.cn/simple"
+default = true
 [tool.setuptools.package-dir]
 "langgraph.templates.agent" = "src/agent"
 "agent" = "src/agent"

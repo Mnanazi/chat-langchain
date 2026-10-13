@@ -52,9 +52,10 @@ docs_agent_middleware = [
 
 agent = define_deep_agent(
     name="docs_agent",
-    # Keep this literal so `mda deploy` can infer the provider package and
-    # preflight GOOGLE_API_KEY.
-    model="google_genai:gemini-3.5-flash-lite",
+    # 统一由 src/agent/config.py 的注册表驱动（模型名来自环境变量 OPENAI_MODEL，
+    # 默认百炼 openai:qwen3.6-flash）。注意：`mda deploy` 若需静态推断 provider，
+    # 可将此行改回字面量字符串。
+    model=DEFAULT_MODEL.id,
     tools=docs_agent_tools,
     middleware=docs_agent_middleware,
     # The current public app does not have cross-thread user memory. Keep MDA

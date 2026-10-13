@@ -6,9 +6,9 @@ from dataclasses import dataclass
 
 import dotenv
 from langchain.agents.middleware import ModelFallbackMiddleware
-from langchain.chat_models import init_chat_model
 from langchain_core.runnables import Runnable, RunnableLambda
 
+from src.agent.llm import CHAT_MODEL_ID, DEFAULT_CHAT_MODEL, get_chat_model
 from src.middleware.retry_middleware import (
     RETRYABLE_FINISH_REASONS,
     MalformedResponseError,
@@ -29,49 +29,35 @@ logger = logging.getLogger(__name__)
 class ModelConfig:
     """Configuration for a supported chat model."""
 
-    id: str  # e.g., "google_genai:gemini-3.5-flash-lite"
-    name: str  # Display name, e.g., "Gemini 3.5 Flash Lite"
+    id: str  # e.g., "openai:qwen3.6-flash"
+    name: str  # Display name, e.g., "Qwen3.6 Flash"
     provider: str  # e.g., "google", "openai", "baseten"
     api_key_env: str  # Environment variable for API key
     description: str | None = None
 
 
 # Backend-supported models.
+# 所有对话模型统一走百炼（DashScope OpenAI 兼容端点），模型名由 src/agent/llm.py
+# 从环境变量 OPENAI_MODEL 读取（默认 qwen3.6-flash），思考开关由 DISABLE_THINKING 控制。
+# 新增/切换模型只需改环境变量，无需在此硬编码多个 provider。
 MODELS: dict[str, ModelConfig] = {
-    # Anthropic
-    "claude-haiku-4.5": ModelConfig(
-        id="anthropic:claude-haiku-4-5-20251001",
-        name="Claude Haiku 4.5",
-        provider="anthropic",
-        api_key_env="ANTHROPIC_API_KEY",
-        description="Fast and cheap Anthropic model",
-    ),
-    # OpenAI
-    "gpt-5.4-nano": ModelConfig(
-        id="openai:gpt-5.4-nano",
-        name="GPT-5.4 Nano",
+    DEFAULT_CHAT_MODEL: ModelConfig(
+        id=CHAT_MODEL_ID,
+        name=DEFAULT_CHAT_MODEL,
         provider="openai",
         api_key_env="OPENAI_API_KEY",
-        description="Cheapest GPT-5.4-class model for simple high-volume tasks",
-    ),
-    # Google
-    "gemini-3.5-flash-lite": ModelConfig(
-        id="google_genai:gemini-3.5-flash-lite",
-        name="Gemini 3.5 Flash Lite",
-        provider="google",
-        api_key_env="GOOGLE_API_KEY",
-        description="Fastest, most cost-effective Gemini",
+        description="Bailian (DashScope) chat model, thinking controlled by DISABLE_THINKING",
     ),
 }
 
 # Default models for different use cases
-DEFAULT_MODEL = MODELS["gemini-3.5-flash-lite"]
-GUARDRAILS_MODEL = MODELS["gpt-5.4-nano"]
+DEFAULT_MODEL = MODELS[DEFAULT_CHAT_MODEL]
+GUARDRAILS_MODEL = MODELS[DEFAULT_CHAT_MODEL]
 
-# Fallback chain (in order of preference)
+# Fallback chain (in order of preference).
+# 目前只有百炼一个可用 provider，fallback 即同一模型（保留重试/降级接线结构）。
 FALLBACK_MODELS = [
-    MODELS["gpt-5.4-nano"],
-    MODELS["claude-haiku-4.5"],
+    MODELS[DEFAULT_CHAT_MODEL],
 ]
 
 # =============================================================================
@@ -80,8 +66,6 @@ FALLBACK_MODELS = [
 
 API_KEYS = [
     "OPENAI_API_KEY",
-    "ANTHROPIC_API_KEY",
-    "GOOGLE_API_KEY",
 ]
 
 for key in API_KEYS:
@@ -98,7 +82,7 @@ for key in API_KEYS:
 MAX_RETRIES = int(os.getenv("MODEL_MAX_RETRIES", "2"))
 
 # Primary model. Public callers cannot switch this at runtime.
-default_model = init_chat_model(model=DEFAULT_MODEL.id)
+default_model = get_chat_model(DEFAULT_MODEL.id)
 logger.info(f"Default model: {DEFAULT_MODEL.name} ({DEFAULT_MODEL.id})")
 
 
@@ -112,7 +96,7 @@ def _raise_for_retryable_finish_reason(response: object) -> object:
 
 def _init_retrying_model(model: str) -> Runnable:
     return (
-        init_chat_model(model=model)
+        get_chat_model(model)
         | RunnableLambda(_raise_for_retryable_finish_reason)
     ).with_retry(stop_after_attempt=MAX_RETRIES + 1)
 
