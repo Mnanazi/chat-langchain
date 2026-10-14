@@ -166,6 +166,9 @@ uv.lock
 # Managed Deep Agents local build output
 .mda/
 
+# Qoder IDE artifacts (repowiki / knowledge cache, locally generated)
+.qoder/
+
 # Codebase tools logging
 codebase_tools.log
 
