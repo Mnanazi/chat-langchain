@@ -166,8 +166,15 @@ uv.lock
 # Managed Deep Agents local build output
 .mda/
 
-# Qoder IDE artifacts (repowiki / knowledge cache, locally generated)
-.qoder/
+# Qoder IDE artifacts: ignore everything under .qoder/ EXCEPT the Repo Wiki
+# markdown docs (repowiki/zh/content/), which we keep for GitHub reference.
+# knowledge/ (memory cards), zh/meta/ (encrypted index) and wiki_plan.yaml stay ignored.
+.qoder/*
+!.qoder/repowiki/
+.qoder/repowiki/*
+!.qoder/repowiki/zh/
+.qoder/repowiki/zh/*
+!.qoder/repowiki/zh/content/
 
 # Codebase tools logging
 codebase_tools.log
