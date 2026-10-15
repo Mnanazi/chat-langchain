@@ -98,7 +98,7 @@ def _fetch_all_articles() -> List[Dict[str, Any]]:
 
     while pages_fetched < max_pages:
         response = requests.get(url, headers=headers, params=params)
-        response.raise_for_status()
+        response.raise_for_status()  # 错误显式化：raise_for_status() 让 HTTP 错误上浮，不掩盖问题。
         body = response.json()
 
         page_data = body.get("data", [])
@@ -128,7 +128,7 @@ def _fetch_all_articles() -> List[Dict[str, Any]]:
 
 
 @tool
-def search_support_articles(collections: str = "all") -> str:
+def search_support_articles(collections: str = "all") -> str:  # 从 Pylon 知识库中获取 LangChain 支持文章的标题，并按集合进行筛选。
     """Get LangChain support article titles from Pylon KB, filtered by collection(s).
 
     Returns article titles in structured JSON format so the LLM can decide which ones to fetch.
@@ -227,13 +227,13 @@ def search_support_articles(collections: str = "all") -> str:
                             collection_ids.append(collection_map[key])
                             matched = True
                             break
-                    if not matched:
+                    if not matched:  # 精确 + 大小写不敏感都没命中 → 该分类名不存在
                         return json.dumps(
                             {
                                 "error": f"Collection '{coll_name}' not found. Available collections: {', '.join(collection_map.keys())}"
                             },
                             indent=2,
-                        )
+                        )  # 当前 coll_name 在系统里找不到对应分类，立即 return：不再继续遍历剩余分类，直接终止整个工具调用并返回结果。
 
             # Filter articles by collection_id
             filtered_articles = [

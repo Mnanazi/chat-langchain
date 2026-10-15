@@ -26,17 +26,17 @@ docs_agent_tools = [
     get_support_article_content,
     fetch_langchain_pricing,
     check_links,
-]
+]  # 工具注册表：本地工具。  MCP 工具不在该列表中，而是由 connectors/mcp.py 声明，由托管运行时注入。（managed deep agent，即 mda，托管的深度智能体）
 
 docs_agent_middleware = [
     # Cap oversized user input (was auth.py). Trace metadata is applied via
     # define_deep_agent(metadata=...) so it lands on the LangSmith root run.
-    IngressGuardsMiddleware(),
+    IngressGuardsMiddleware(),  # 输入截断
     GuardrailsMiddleware(
         model=GUARDRAILS_MODEL.id,
         fallback_model=DEFAULT_MODEL.id,
         block_off_topic=True,
-    ),
+    ),  # scope 拦截
     CustomSummarizationMiddleware(
         model=DEFAULT_MODEL.id,
         summary_model=summarization_model,
@@ -44,10 +44,10 @@ docs_agent_middleware = [
         keep=("tokens", 30_000),
         summary_prompt=context_summary_prompt,
         trim_tokens_to_summarize=None,
-    ),
-    tool_retry_middleware,
-    model_retry_middleware,
-    model_fallback_middleware,
+    ),  # 上下文压缩
+    tool_retry_middleware,  # 工具重试
+    model_retry_middleware,  # 模型重试
+    model_fallback_middleware,  # 模型回退
 ]
 
 agent = define_deep_agent(
